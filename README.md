@@ -1,81 +1,119 @@
-# Parking Platform
+# Park Off
 
-Parking Platform is an early stage web application focused on helping users find and understand parking options in Halifax.
+Community powered parking discovery for Halifax, Nova Scotia.
 
-The goal is to build a map based platform that can show different types of parking, including free parking, paid parking, restricted parking, and parking spots that need community verification.
+Find free parking, paid parking, street parking, and community verified spots on a live map.
 
-## Current Status
+## Tech stack
 
-This project is currently in the initial setup phase.
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19.2, Tailwind CSS v4 |
+| Language | TypeScript |
+| Map | Mapbox GL JS v3 |
+| Database | Supabase (planned) |
+| OCR | Google Vision API (planned) |
 
-So far, we have:
+## Prerequisites
 
-- Created the GitHub repository
-- Set up the Next.js project
-- Installed the initial dependencies
-- Started planning the folder structure and core features
+- Node.js 20.9 or higher ([download](https://nodejs.org/))
+- npm (comes with Node.js)
+- A free Mapbox account for the map token ([sign up](https://account.mapbox.com/auth/signup/))
 
-The main product features are not implemented yet.
+## Getting started
 
-## Project Idea
+### 1. Clone the repo
 
-Parking information in Halifax is often scattered across different sources. This project aims to bring that information together in one place and improve it over time through user contributions.
-
-The platform may eventually allow users to:
-
-- View parking locations on a map
-- Filter between free and paid parking
-- See parking rules and restrictions
-- Submit corrections
-- Add new parking spots
-- Upload parking sign photos for future validation
-
-## Planned Tech Stack
-
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- Supabase or PostgreSQL, planned
-- Mapbox or Leaflet, planned
-
-## Planned Project Structure
-
-```text
-src/
-  app/
-  components/
-  data/
-  lib/
-  types/
-  config/
+```bash
+git clone <repo-url>
+cd parking-platform
 ```
 
-## Development
-
-Install dependencies:
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-Run the development server:
+This installs everything from `package.json`. The `node_modules` folder is gitignored so it is not in the repo.
+
+### 3. Set up environment variables
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and replace the placeholder with your real Mapbox token:
+
+```
+NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_actual_token_here
+```
+
+Get a token from [account.mapbox.com/access-tokens](https://account.mapbox.com/access-tokens/). Public tokens start with `pk.`. The `.env` file is gitignored so you will never accidentally commit a real token.
+
+### 4. Start the dev server
 
 ```bash
 npm run dev
 ```
 
-Open:
+Open [http://localhost:3000](http://localhost:3000).
 
-```text
-http://localhost:3000
+## Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Yes | Mapbox public token. Must start with `pk.` |
+
+When you add a new variable: add a placeholder line to `.env.example` and update this table. That way the next person to clone the repo knows exactly what they need.
+
+## Project structure
+
 ```
+src/
+  app/
+    layout.tsx          Root HTML shell and metadata
+    page.tsx            Homepage
+    globals.css         Global styles and Tailwind entry point
+  components/
+    layout/
+      Navbar.tsx        Top navigation bar
+    map/
+      ParkingMap.tsx    Mapbox GL JS map (client component)
+      ParkingMarker.tsx Individual parking markers (in progress)
+    capture/            Future: camera and sign photo submission
+    parking/            Future: parking spot cards and details
+  lib/                  Future: API helpers and utilities
+  types/                Future: shared TypeScript types
+```
+
+## Available scripts
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Start the dev server with Turbopack |
+| `npm run build` | Build for production |
+| `npm start` | Run the production build |
+| `npm run lint` | Run ESLint |
+
+## Current status
+
+The homepage is a UI preview. No backend is connected yet.
+
+What is working:
+- Homepage with hero, map preview, how it works, and contribution sections
+- Live Mapbox map centered on downtown Halifax
+- Navbar with placeholder links
+
+What is planned:
+- Real parking spot data from Supabase
+- Parking markers on the map (free, paid, restricted)
+- Parking sign photo upload with Google Vision OCR
+- Community verification flow
+- User accounts
 
 ## Contributors
 
 - Gavin Sharma
 - Ishant
-
-## Notes
-
-This repository is currently being prepared for development. The structure, features, and implementation details may change as the project evolves.

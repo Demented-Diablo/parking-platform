@@ -1,20 +1,5 @@
 import Navbar from "@/components/layout/Navbar";
-
-// ── Mock data ────────────────────────────────────────────────────────────────
-
-const SAMPLE_MARKERS = [
-  { id: 1, label: "Free",         dot: "bg-green-500", top: "22%", left: "28%" },
-  { id: 2, label: "Paid",         dot: "bg-blue-500",  top: "50%", left: "62%" },
-  { id: 3, label: "Likely Free",  dot: "bg-amber-400", top: "68%", left: "20%" },
-  { id: 4, label: "Restricted",   dot: "bg-red-500",   top: "30%", left: "75%" },
-];
-
-const LEGEND = [
-  { color: "bg-green-500", label: "Free" },
-  { color: "bg-blue-500",  label: "Paid" },
-  { color: "bg-amber-400", label: "Likely Free" },
-  { color: "bg-red-500",   label: "Restricted" },
-];
+import ParkingMap from "@/components/map/ParkingMap";
 
 const STEPS = [
   {
@@ -87,40 +72,8 @@ export default function Home() {
               Halifax downtown · sample data only
             </p>
 
-            {/* Fake map card */}
-            <div className="map-grid relative mt-10 h-80 w-full overflow-hidden rounded-2xl border border-gray-200 bg-stone-100 shadow-md">
-              {/* Center label */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <span className="rounded bg-white/70 px-2 py-1 text-xs font-medium text-gray-400 backdrop-blur-sm">
-                  Downtown Halifax
-                </span>
-              </div>
-
-              {/* Parking markers */}
-              {SAMPLE_MARKERS.map((m) => (
-                <div
-                  key={m.id}
-                  className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5"
-                  style={{ top: m.top, left: m.left }}
-                >
-                  <span
-                    className={`h-3.5 w-3.5 rounded-full border-2 border-white shadow ${m.dot}`}
-                  />
-                  <span className="rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs font-semibold text-gray-700 shadow-sm">
-                    {m.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Legend */}
-            <div className="mt-5 flex flex-wrap justify-center gap-5 text-xs text-gray-600">
-              {LEGEND.map(({ color, label }) => (
-                <span key={label} className="flex items-center gap-1.5">
-                  <span className={`h-2.5 w-2.5 rounded-full ${color}`} />
-                  {label}
-                </span>
-              ))}
+            <div className="mt-10">
+              <ParkingMap />
             </div>
           </div>
         </section>
