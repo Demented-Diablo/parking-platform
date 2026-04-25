@@ -92,8 +92,9 @@ function buildPopupHTML(spot: Spot): string {
   // Details row
   const details: string[] = [];
   if (spot.time_limit_minutes) details.push(`⏱ ${formatTimeLimit(spot.time_limit_minutes)}`);
-  if (spot.cost_per_hour != null && spot.cost_per_hour > 0)  details.push(`💰 $${spot.cost_per_hour.toFixed(2)}/hr`);
-  if (spot.cost_per_hour === 0) details.push("💰 Free");
+  if (spot.cost_per_hour != null && spot.cost_per_hour > 0) details.push(`💰 $${spot.cost_per_hour.toFixed(2)}/hr`);
+  else if (spot.cost_per_hour === 0)                        details.push("💰 Free");
+  else if (spot.parking_type === "paid")                    details.push("💰 See meter");
 
   const detailRow = details.length
     ? `<div style="margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px">
