@@ -1,15 +1,18 @@
 import { supabase } from "./supabase";
+import type { ExtractedParkingData } from "@/app/api/analyse-sign/route";
 
 export async function uploadSignSubmission({
   imageBlob,
   latitude,
   longitude,
   deviceMetadata,
+  extractedData,
 }: {
   imageBlob: Blob;
   latitude: number;
   longitude: number;
   deviceMetadata: Record<string, string>;
+  extractedData?: ExtractedParkingData;
 }): Promise<void> {
   const storagePath = `submissions/${Date.now()}-${crypto.randomUUID()}.jpg`;
 
@@ -27,10 +30,10 @@ export async function uploadSignSubmission({
     latitude,
     longitude,
     device_metadata: deviceMetadata,
+    extracted_data: extractedData ?? null,
   });
 
   if (dbError) {
-    // Clean up the orphaned storage file before surfacing the error
     await supabase.storage.from("parking-signs").remove([storagePath]).catch(() => {});
     throw dbError;
   }

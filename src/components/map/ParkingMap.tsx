@@ -34,39 +34,39 @@ type Spot = {
   longitude: number;
   parking_type: string;
   street_name: string | null;
+  from_street: string | null;
+  to_street: string | null;
   time_limit_minutes: number | null;
   cost_per_hour: number | null;
+  notes: string | null;
 };
 
 // ─── Sample data (shown when Supabase table is empty) ────────────────────────
 
 const SAMPLE_SPOTS: Spot[] = [
-  { id: "s1", latitude: 44.6488, longitude: -63.5752, parking_type: "free",       street_name: "Spring Garden Rd", time_limit_minutes: 120,  cost_per_hour: null },
-  { id: "s2", latitude: 44.6468, longitude: -63.5729, parking_type: "paid",       street_name: "Barrington St",    time_limit_minutes: null, cost_per_hour: 2.50 },
-  { id: "s3", latitude: 44.6502, longitude: -63.5771, parking_type: "permit",     street_name: "Robie St",         time_limit_minutes: null, cost_per_hour: null },
-  { id: "s4", latitude: 44.6479, longitude: -63.5810, parking_type: "free",       street_name: "Queen St",         time_limit_minutes: 60,   cost_per_hour: null },
-  { id: "s5", latitude: 44.6455, longitude: -63.5760, parking_type: "paid",       street_name: "Granville St",     time_limit_minutes: null, cost_per_hour: 3.00 },
-  { id: "s6", latitude: 44.6510, longitude: -63.5740, parking_type: "accessible", street_name: "Brunswick St",     time_limit_minutes: null, cost_per_hour: null },
-  { id: "s7", latitude: 44.6440, longitude: -63.5790, parking_type: "unknown",    street_name: "Lower Water St",   time_limit_minutes: null, cost_per_hour: null },
-  { id: "s8", latitude: 44.6495, longitude: -63.5800, parking_type: "paid",       street_name: "Hollis St",        time_limit_minutes: null, cost_per_hour: 2.00 },
-  { id: "s9", latitude: 44.6520, longitude: -63.5760, parking_type: "free",       street_name: "University Ave",   time_limit_minutes: 90,   cost_per_hour: null },
+  { id: "s1", latitude: 44.6488, longitude: -63.5752, parking_type: "free",       street_name: "Spring Garden Rd", from_street: "Queen St",    to_street: "Park St",       time_limit_minutes: 120,  cost_per_hour: null, notes: null },
+  { id: "s2", latitude: 44.6468, longitude: -63.5729, parking_type: "paid",       street_name: "Barrington St",    from_street: null,          to_street: null,            time_limit_minutes: null, cost_per_hour: 2.50, notes: null },
+  { id: "s3", latitude: 44.6502, longitude: -63.5771, parking_type: "permit",     street_name: "Robie St",         from_street: null,          to_street: null,            time_limit_minutes: null, cost_per_hour: null, notes: "Zone A permit required" },
+  { id: "s4", latitude: 44.6479, longitude: -63.5810, parking_type: "free",       street_name: "Queen St",         from_street: "Brunswick St", to_street: "Hollis St",    time_limit_minutes: 60,   cost_per_hour: null, notes: null },
+  { id: "s5", latitude: 44.6455, longitude: -63.5760, parking_type: "paid",       street_name: "Granville St",     from_street: null,          to_street: null,            time_limit_minutes: null, cost_per_hour: 3.00, notes: null },
+  { id: "s6", latitude: 44.6510, longitude: -63.5740, parking_type: "accessible", street_name: "Brunswick St",     from_street: null,          to_street: null,            time_limit_minutes: null, cost_per_hour: null, notes: null },
+  { id: "s7", latitude: 44.6440, longitude: -63.5790, parking_type: "unknown",    street_name: "Lower Water St",   from_street: null,          to_street: null,            time_limit_minutes: null, cost_per_hour: null, notes: null },
+  { id: "s8", latitude: 44.6495, longitude: -63.5800, parking_type: "paid",       street_name: "Hollis St",        from_street: null,          to_street: null,            time_limit_minutes: null, cost_per_hour: 2.00, notes: null },
+  { id: "s9", latitude: 44.6520, longitude: -63.5760, parking_type: "free",       street_name: "University Ave",   from_street: null,          to_street: null,            time_limit_minutes: 90,   cost_per_hour: null, notes: null },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Teardrop SVG pin — the tip sits at the exact coordinate (anchor: "bottom")
 function createPinElement(color: string): HTMLDivElement {
   const el = document.createElement("div");
-  el.style.cssText = "cursor:pointer;width:26px;height:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25))";
+  // pointer-events:all is required — Mapbox sets the marker wrapper to none in v3
+  el.style.cssText = "cursor:pointer;width:26px;height:34px;pointer-events:all;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.28))";
   el.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 34" width="26" height="34">
-      <path
-        d="M13 0C5.82 0 0 5.82 0 13c0 9.1 13 21 13 21S26 22.1 26 13C26 5.82 20.18 0 13 0z"
-        fill="${color}"
-      />
+      <path d="M13 0C5.82 0 0 5.82 0 13c0 9.1 13 21 13 21S26 22.1 26 13C26 5.82 20.18 0 13 0z"
+            fill="${color}" />
       <circle cx="13" cy="13" r="5.5" fill="white" />
-    </svg>
-  `;
+    </svg>`;
   return el;
 }
 
@@ -80,23 +80,35 @@ function buildPopupHTML(spot: Spot): string {
   const color = TYPE_COLOR[spot.parking_type] ?? TYPE_COLOR.unknown;
   const label = TYPE_LABEL[spot.parking_type] ?? "Parking";
 
-  const street = spot.street_name
-    ? `<p style="margin:5px 0 0;font-size:13px;color:#374151">${spot.street_name}</p>`
-    : "";
+  // Street line: "Spring Garden Rd  Queen St → Park St"
+  let streetLine = "";
+  if (spot.street_name) {
+    streetLine += `<p style="margin:5px 0 0;font-size:13px;font-weight:600;color:#111827">${spot.street_name}</p>`;
+  }
+  if (spot.from_street && spot.to_street) {
+    streetLine += `<p style="margin:2px 0 0;font-size:11px;color:#6b7280">${spot.from_street} → ${spot.to_street}</p>`;
+  }
 
+  // Details row
   const details: string[] = [];
-  if (spot.time_limit_minutes) details.push(formatTimeLimit(spot.time_limit_minutes));
-  if (spot.cost_per_hour)      details.push(`$${spot.cost_per_hour.toFixed(2)}/hr`);
+  if (spot.time_limit_minutes) details.push(`⏱ ${formatTimeLimit(spot.time_limit_minutes)}`);
+  if (spot.cost_per_hour != null && spot.cost_per_hour > 0)  details.push(`💰 $${spot.cost_per_hour.toFixed(2)}/hr`);
+  if (spot.cost_per_hour === 0) details.push("💰 Free");
 
-  const detailLine = details.length
-    ? `<p style="margin:4px 0 0;font-size:12px;color:#6b7280">${details.join(" · ")}</p>`
+  const detailRow = details.length
+    ? `<div style="margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px">
+        ${details.map(d => `<span style="background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:11px;color:#374151">${d}</span>`).join("")}
+       </div>`
     : "";
 
-  // destination pre-filled; Google Maps uses the user's live location as origin
+  const notesLine = spot.notes
+    ? `<p style="margin:6px 0 0;font-size:11px;color:#6b7280;font-style:italic">${spot.notes}</p>`
+    : "";
+
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}`;
 
   return `
-    <div style="font-family:system-ui,-apple-system,sans-serif;padding:4px 2px;min-width:180px">
+    <div style="font-family:system-ui,-apple-system,sans-serif;padding:4px 2px;min-width:190px">
       <div style="display:flex;align-items:center;gap:7px">
         <span style="
           display:inline-block;width:11px;height:11px;border-radius:50%;
@@ -105,8 +117,9 @@ function buildPopupHTML(spot: Spot): string {
         "></span>
         <strong style="font-size:14px;color:#111827">${label}</strong>
       </div>
-      ${street}
-      ${detailLine}
+      ${streetLine}
+      ${detailRow}
+      ${notesLine}
       <a
         href="${mapsUrl}"
         target="_blank"
@@ -117,11 +130,8 @@ function buildPopupHTML(spot: Spot): string {
           text-align:center;border-radius:999px;
           font-size:12px;font-weight:600;text-decoration:none;
         "
-      >
-        Open in Google Maps ↗
-      </a>
-    </div>
-  `;
+      >Open in Google Maps ↗</a>
+    </div>`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -129,22 +139,21 @@ function buildPopupHTML(spot: Spot): string {
 export default function ParkingMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
-  const popupRef     = useRef<mapboxgl.Popup | null>(null);
   const markersRef   = useRef<mapboxgl.Marker[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
 
-  // Fetch spots from Supabase; fall back to sample data if table is empty
+  // Fetch spots; fall back to sample data if table is empty
   useEffect(() => {
     supabase
       .from("parking_spots")
-      .select("id, latitude, longitude, parking_type, street_name, time_limit_minutes, cost_per_hour")
+      .select("id, latitude, longitude, parking_type, street_name, from_street, to_street, time_limit_minutes, cost_per_hour, notes")
       .eq("is_active", true)
       .then(({ data }) => {
         setSpots(data && data.length > 0 ? (data as Spot[]) : SAMPLE_SPOTS);
       });
   }, []);
 
-  // Initialise map once
+  // Init map once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -158,8 +167,6 @@ export default function ParkingMap() {
     });
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-    // Live location button — tapping centres the map on the user and shows their dot
     map.addControl(
       new mapboxgl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
@@ -172,7 +179,6 @@ export default function ParkingMap() {
     mapRef.current = map;
 
     return () => {
-      popupRef.current?.remove();
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       map.remove();
@@ -185,29 +191,35 @@ export default function ParkingMap() {
     const map = mapRef.current;
     if (!map || spots.length === 0) return;
 
-    // Remove old pins
+    // Clear old markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
-    popupRef.current?.remove();
+
+    const popups: mapboxgl.Popup[] = [];
 
     spots.forEach((spot) => {
       const el = createPinElement(TYPE_COLOR[spot.parking_type] ?? TYPE_COLOR.unknown);
 
+      // Use Mapbox's native setPopup — handles click toggle internally
+      // and respects pointer-events correctly across all browsers
+      const popup = new mapboxgl.Popup({
+        offset: 38,
+        closeButton: true,
+        maxWidth: "300px",
+        className: "parkoff-popup",
+      }).setHTML(buildPopupHTML(spot));
+
+      // Enforce single-popup: close all others when this one opens
+      popup.on("open", () => {
+        popups.forEach((p) => { if (p !== popup) p.remove(); });
+      });
+
+      popups.push(popup);
+
       const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat([spot.longitude, spot.latitude])
+        .setPopup(popup)
         .addTo(map);
-
-      el.addEventListener("click", () => {
-        popupRef.current?.remove();
-        popupRef.current = new mapboxgl.Popup({
-          offset: 38,
-          closeButton: true,
-          maxWidth: "280px",
-        })
-          .setLngLat([spot.longitude, spot.latitude])
-          .setHTML(buildPopupHTML(spot))
-          .addTo(map);
-      });
 
       markersRef.current.push(marker);
     });

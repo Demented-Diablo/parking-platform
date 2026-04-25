@@ -70,7 +70,9 @@ CREATE INDEX parking_spots_location_idx    ON parking_spots USING GIST (location
 CREATE INDEX parking_spots_type_active_idx ON parking_spots (parking_type, is_active);
 CREATE INDEX parking_spots_confidence_idx  ON parking_spots (confidence_score);
 CREATE INDEX parking_spots_active_partial  ON parking_spots (id) WHERE is_active = TRUE;
-CREATE UNIQUE INDEX parking_spots_external_id_idx ON parking_spots (external_id) WHERE external_id IS NOT NULL;
+CREATE UNIQUE INDEX parking_spots_external_id_idx    ON parking_spots (external_id)              WHERE external_id IS NOT NULL;
+-- Composite index required for the import script's onConflict: "source_type,external_id" upsert
+CREATE UNIQUE INDEX parking_spots_source_external_idx ON parking_spots (source_type, external_id) WHERE external_id IS NOT NULL;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -139,6 +141,7 @@ CREATE TABLE sign_submissions (
   longitude       DOUBLE PRECISION  NOT NULL,
   location        GEOGRAPHY(POINT, 4326),
   device_metadata JSONB,
+  extracted_data  JSONB,            -- populated by OCR if user ran analysis before submitting
 
   -- Review workflow
   status          submission_status NOT NULL DEFAULT 'pending_review',
